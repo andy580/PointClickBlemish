@@ -22,6 +22,9 @@ def blemishRemover(action, x, y, flags, userdata):
         blemish = cv2.cvtColor(blemish, cv2.COLOR_BGR2GRAY)
         
         distFromBlemish = 20
+        boundaryDict = {}
+        smoothnessDict = {}
+        optimalDict = {}
 
         # Boundary array used to compare adjacent skin patches
         boundary = np.zeros((16,16))
@@ -49,6 +52,18 @@ def blemishRemover(action, x, y, flags, userdata):
             sobelx = cv2.Sobel(blemish, cv2.CV_32F, 1,0)
             sobely = cv2.Sobel(blemish, cv2.CV_32F, 0,1)
             sobel2 = abs(np.mean(sobelx)+np.mean(sobely))
+
+            # Store values to dictionaries
+            boundaryDict[theta] = boundaryDiffSum
+            smoothnessDict[theta] = sobel2
+
+        # get max value of each dictionary
+        maxBoundary = max(boundaryDict.values())
+        maxSmoothness = max(smoothnessDict.values())
+
+        for theta in boundaryDict.keys(): 
+            optimalDict[theta] = boundaryDict[theta]/maxBoundary + smoothnessDict[theta]/maxSmoothness
+        optimalTheta = min(optimalDict, key=optimalDict.get)    
 
 
 # Displaying Window     
