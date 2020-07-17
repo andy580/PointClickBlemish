@@ -45,6 +45,11 @@ def blemishRemover(action, x, y, flags, userdata):
             boundaryDiff = boundaryDiff.flatten()
             boundaryDiffSum = sum(boundaryDiff)
 
+            #Retrieving smoothness of adjacent skin patches
+            sobelx = cv2.Sobel(blemish, cv2.CV_32F, 1,0)
+            sobely = cv2.Sobel(blemish, cv2.CV_32F, 0,1)
+            sobel2 = abs(np.mean(sobelx)+np.mean(sobely))
+
 
 # Displaying Window     
 windowName = "Blemish Remover"
