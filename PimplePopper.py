@@ -62,9 +62,9 @@ def blemishRemover(action, x, y, flags, userdata):
         # get max value of each dictionary
         maxBoundary = max(boundaryDict.values())
         maxSmoothness = max(smoothnessDict.values())
-
+        alpha = 0.8
         for theta in boundaryDict.keys(): 
-            optimalDict[theta] = boundaryDict[theta]/maxBoundary + smoothnessDict[theta]/maxSmoothness
+            optimalDict[theta] = alpha*boundaryDict[theta]/maxBoundary + (1-alpha)*smoothnessDict[theta]/maxSmoothness
         optimalTheta = min(optimalDict, key=optimalDict.get)    
 
         # Seamlessly clone best skin patch onto blemish
@@ -89,7 +89,7 @@ def blemishRemover(action, x, y, flags, userdata):
         
         outputPatch = bestSkinPatch + patch
 
-        output = cv2.addWeighted(image[y-8:y+8, x-8:x+8],0.2, outputPatch,0.8,0.0)
+        output = cv2.addWeighted(image[y-8:y+8, x-8:x+8],0.4, outputPatch,0.6,0.0)
         image[y-8:y+8, x-8:x+8] = output
         cv2.medianBlur(image[y-20:y+20, x-20:x+20],5)
 
