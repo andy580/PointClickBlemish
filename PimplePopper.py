@@ -18,6 +18,12 @@ output = image.copy()
 def blemishRemover(action, x, y, flags, userdata):
     global image
     global output
+
+    # View bounding box to remove blemish
+    tempImage = image.copy()
+    cv2.rectangle(tempImage, ((x-8),(y-8)),((x+8),y+8), (255,255,255), 1)
+    cv2.imshow(windowName, tempImage)
+
     # Selecting blemish: set temporary patch to 16x16 pixels
     if action == cv2.EVENT_LBUTTONDOWN:
         blemish = image[y-8:y+8, x-8:x+8].copy()
