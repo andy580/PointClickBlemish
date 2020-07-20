@@ -14,19 +14,25 @@ filename = askopenfilename()
 image = cv2.imread(filename)
 output = image.copy()
 
+
+def sizeChange(*args):
+    global pimpleSize
+    pimpleSize = args[0]
+
 # Function to select and replace skin patch
 def blemishRemover(action, x, y, flags, userdata):
     global image
     global output
+    global pimpleSize
 
     # View bounding box to remove blemish
     tempImage = image.copy()
-    cv2.rectangle(tempImage, ((x-8),(y-8)),((x+8),y+8), (255,255,255), 1)
+    cv2.rectangle(tempImage, ((x-pimpleSize),(y-pimpleSize)),((x+pimpleSize),y+pimpleSize), (255,255,255), 2)
     cv2.imshow(windowName, tempImage)
 
     # Selecting blemish: set temporary patch to 16x16 pixels
     if action == cv2.EVENT_LBUTTONDOWN:
-        blemish = image[y-8:y+8, x-8:x+8].copy()
+        blemish = image[y-pimpleSize:y+pimpleSize, x-pimpleSize:x+pimpleSize].copy()
         blemish = cv2.cvtColor(blemish, cv2.COLOR_BGR2GRAY)
         
         distFromBlemish = 20
@@ -35,7 +41,7 @@ def blemishRemover(action, x, y, flags, userdata):
         optimalDict = {}
 
         # Boundary array used to compare adjacent skin patches
-        boundary = np.zeros((16,16))
+        boundary = np.zeros((2*pimpleSize,2*pimpleSize))
         boundary[:,0] = boundary[0,:] = boundary[:,-1] = boundary[-1,:] = 1
         boundary = np.uint8(boundary)
 
@@ -45,7 +51,7 @@ def blemishRemover(action, x, y, flags, userdata):
             xoff = int(distFromBlemish * math.cos(np.deg2rad(theta)))+x
             yoff = int(distFromBlemish * math.sin(np.deg2rad(theta)))+y
 
-            blemishBoundary = image[yoff-8:yoff+8, xoff-8:xoff+8].copy()
+            blemishBoundary = image[yoff-pimpleSize:yoff+pimpleSize, xoff-pimpleSize:xoff+pimpleSize].copy()
             blemishBoundary = cv2.cvtColor(blemishBoundary, cv2.COLOR_BGR2GRAY)
 
             # Retrieving boundaries of adjacent skin patch
@@ -76,16 +82,16 @@ def blemishRemover(action, x, y, flags, userdata):
         # Seamlessly clone best skin patch onto blemish
         xoff = int(distFromBlemish * math.cos(np.deg2rad(optimalTheta)))+x
         yoff = int(distFromBlemish * math.sin(np.deg2rad(optimalTheta)))+y
-        bestSkinPatch = image[yoff-8:yoff+8, xoff-8:xoff+8].copy()
+        bestSkinPatch = image[yoff-pimpleSize:yoff+pimpleSize, xoff-pimpleSize:xoff+pimpleSize].copy()
 
         # mask = np.ones(bestSkinPatch.shape[0:2], bestSkinPatch.dtype)*255
-        mask = np.ones((16,16), float)
+        mask = np.ones((2*pimpleSize,2*pimpleSize), float)
         # print(mask)
         for i in range(5,-1,-1):
             mask[:,i] = mask[i,:] = mask[:,-(i+1)] = mask[-(i+1),:] = (i/5)
             
         maskInv = 1-mask
-        patch = image[y-8:y+8, x-8:x+8]
+        patch = image[y-pimpleSize:y+pimpleSize, x-pimpleSize:x+pimpleSize]
         
         mask = cv2.merge((mask,mask,mask))
         maskInv = cv2.merge((maskInv,maskInv,maskInv))
@@ -95,19 +101,25 @@ def blemishRemover(action, x, y, flags, userdata):
         
         outputPatch = bestSkinPatch + patch
 
-        output = cv2.addWeighted(image[y-8:y+8, x-8:x+8],0.4, outputPatch,0.6,0.0)
-        image[y-8:y+8, x-8:x+8] = output
+        output = cv2.addWeighted(image[y-pimpleSize:y+pimpleSize, x-pimpleSize:x+pimpleSize],0.3, outputPatch,0.7,0.0)
+        image[y-pimpleSize:y+pimpleSize, x-pimpleSize:x+pimpleSize] = output
         cv2.medianBlur(image[y-20:y+20, x-20:x+20],5)
 
         cv2.imshow(windowName, image)
 
+# Creating trackbar for window
+windowName = "Blemish Remover"
+maxSize = 100
+trackbarValue = "Size"
+pimpleSize = 8
+
 
 # Displaying Window     
-windowName = "Blemish Remover"
 cv2.namedWindow(windowName, cv2.WINDOW_NORMAL)
 cv2.imshow(windowName, image)
 # cv2.imshow("output", bestSkinPatch)
 cv2.setMouseCallback(windowName, blemishRemover)
+cv2.createTrackbar(trackbarValue, windowName, pimpleSize, maxSize, sizeChange)
 
 
 while True:
